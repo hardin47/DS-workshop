@@ -1,0 +1,392 @@
+---
+title: "Practicing Data Wrangling with Tree Equity Data"
+author: "Jo Hardin -- AWM + GEM"
+date: "October 30, 2015"
+format:
+  html:
+    embed-resources: true
+execute: 
+  warning: false
+  message: false
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+## Instructions
+
+In this worksheet, you'll practice writing **ggplot R code** for creating data visualizations. 
+Each question guides you through building layers of plots for the `ca_tes` dataset. 
+
+**Don't stress yourself out over perfect syntax** -- the goal is to practice what you've learned about data wrangling so far.
+
+
+# The Data
+
+## Loading in the data
+
+```{r}
+ca_tes <- tempfile(fileext = ".zip") |>
+  (\(f) { 
+    download.file("https://tes-app-data-share.s3.amazonaws.com/ca/ca_csv.zip", f, quiet = TRUE)
+    read_csv(unz(f, unzip(f, list = TRUE)$Name[1]))
+  })()
+```
+
+
+## Looking at the data
+
+```{r}
+ca_tes
+```
+
+Variable descriptions are given (mostly) at <a href = "https://www.treeequityscore.org/methodology?tab=data-glossary" target = "_blank">https://www.treeequityscore.org/methodology?tab=data-glossary</a>
+
+
+## An observation
+
+> Observational Unit: object by which data is collected and analyzed
+
+For example, an observational unit could be any of the following:
+
+-   Person
+
+-   County
+
+-   State
+
+-   Country
+
+-   *What is the observational unit in the tree equity dataset?*
+
+
+
+## What is the observational unit?
+
+```{r}
+ca_tes
+```
+
+-   The GEOID or census block group describes a particular community or neighborhood in a given area that contains between 600 - 3,000 people [^2]
+
+[^2]: American Forests Methods and Data Glossary. https://www.treeequityscore.org/methodology?tab=data-glossary
+
+## What are the variables?
+
+-   `treecanopy`: actual tree coverage in an area
+-   `tc_goal`: ideal tree coverage based on needs
+-   `tc_gap`: how far behind the area is (`tc_goal` - `treecanopy`)
+-   `pctpocnorm`: % residents who are people of color
+-   `pctpovnorm`, `unemplnorm`: indicators of equity
+-   `lingnorm`: % of non-English households (linguistic isolation)
+-   `tes`: tree equity score (gap × need)
+
+
+
+## 1. Tree Equity vs. Poverty
+
+> Is there a relationship between poverty (`pctpov`) and tree equity score (`tes`)?
+
+
+```{r}
+#| echo: true
+#| eval: false
+
+ca_tes |>
+  ___(___(x = ___, y = ___)) +
+  ___(color = "navy", alpha = 0.05) 
+```
+
+
+```{r}
+#| echo: true
+#| eval: true
+#| code-line-numbers: "1|2|3|4|5|6"
+
+ca_tes |>
+  ggplot(aes(x = pctpov, y = tes)) +
+  geom_point(color = "navy", alpha = 0.05) + 
+  labs(title = "Tree Equity vs. Poverty",
+       x = "Percent in Poverty",
+       y = "Tree Equity Score")
+```
+
+## 2. Distribution of tree equity scores
+
+> What is the distribution of tree equity scores (`tes`)?
+
+
+```{r}
+#| echo: true
+#| eval: false
+
+___ |>
+  ggplot(aes(___)) +
+  ___(fill = "red")
+```
+
+
+```{r}
+#| echo: true
+#| eval: true
+#| code-line-numbers: "3"
+
+ca_tes |>
+  ggplot(aes(x = tes)) +
+  geom_histogram(fill = "red") +
+  labs(title = "Distribution of tree equity scores",
+       x = "Tree Equity Score")
+
+```
+
+## 3. Distribution of tree equity scores
+
+> What is the distribution of tree equity scores (`tes`) created by a boxplot?
+
+
+```{r}
+#| echo: true
+#| eval: false
+
+___ |>
+  ggplot(aes(___)) +
+  ___(fill = "violet")
+```
+
+
+
+```{r}
+#| echo: true
+#| eval: true
+#| code-line-numbers: "3"
+
+ca_tes |>
+  ggplot(aes(x = tes)) +
+  geom_boxplot(fill = "violet") +
+  labs(title = "Distribution of tree equity scores",
+       x = "Tree Equity Score")
+
+```
+
+
+
+```{r}
+ca_tes |> 
+  ggplot(aes(x = tes, y = biome)) + 
+  geom_boxplot()
+```
+
+## 4. Tree equity vs. linguistic isolation
+
+> Is there a relationship between linguistic isolation (`lingnorm`) and `tes` in an area. 
+
+  - Use ggplot to plot the relationship between `tes` and `lingnorm`
+  - Choose the best plot for the variable types
+  - Create fitting labels for your axes and plot title
+
+##
+
+```{r}
+#| echo: true
+#| eval: true
+#| code-line-numbers: "1|2|3|4|5|6"
+
+ca_tes |>
+  ggplot(aes(x = lingnorm, y = tes)) +
+  geom_point(color = "turquoise") + 
+  labs(title = "Tree Equity vs. Linguistic Isolation",
+       x = "Percent in Linguistic Isolation",
+       y = "Tree Equity Score")
+```
+
+
+
+## 5. Wrangle + plot
+
+Recreate the plot above, but summarize the information **per `county`** before plotting. That is, `Los Angeles County` should now only be represented by one dot. Summarize both `lingnorm` and `tes` using the `mean()` function.
+
+
+
+
+```{r}
+#| echo: true
+#| eval: true
+#| code-line-numbers: "1,2,3,4"
+
+ca_tes |> 
+  group_by(county) |> 
+  summarize(ave_ling = mean(lingnorm),
+            ave_tes = mean(tes)) |> 
+  ggplot(aes(x = ave_ling, y = ave_tes)) + 
+  geom_point() + 
+  labs(title = "Tree Equity vs. Linguistic Isolation by County",
+       x = "Percent in Linguistic Isolation",
+       y = "Tree Equity Score")
+```
+
+## 6. Wrangle + plot + label
+
+Recreate the plot above, but now add labels to the plot to indicate the county of each dot.  Use `geom_label()` or `geom_text()`. Try both! You'll need to use `label = county`...  do you need `aes()`? 
+
+
+
+
+```{r}
+#| echo: true
+#| eval: true
+#| code-line-numbers: "7"
+
+ca_tes |> 
+  group_by(county) |> 
+  summarize(ave_ling = mean(lingnorm),
+            ave_tes = mean(tes)) |> 
+  ggplot(aes(x = ave_ling, y = ave_tes)) + 
+  geom_point() + 
+  geom_text(aes(label = county)) + 
+  labs(title = "Tree Equity vs. Linguistic Isolation by County",
+       x = "Percent in Linguistic Isolation",
+       y = "Tree Equity Score")
+```
+
+
+## 7. Wrangle + plot + label
+
+There is an R package called **ggrepel**.  It includes a geom called `geom_label_repel`. Try it!  (To use a function from a package, you can write: `ggrepel::geom_label_repel()`.)
+
+**Hint:** Is there a yellow bar at the top asking if you want to load the R package **ggrepel**?  Say yes!
+
+
+
+
+```{r}
+#| echo: true
+#| eval: true
+#| code-line-numbers: "7"
+
+ca_tes |> 
+  group_by(county) |> 
+  summarize(ave_ling = mean(lingnorm),
+            ave_tes = mean(tes)) |> 
+  ggplot(aes(x = ave_ling, y = ave_tes)) + 
+  geom_point() + 
+  ggrepel::geom_label_repel(aes(label = county)) + 
+  labs(title = "Tree Equity vs. Linguistic Isolation by County",
+       x = "Percent in Linguistic Isolation",
+       y = "Tree Equity Score")
+```
+
+# Explore, Analyze, Present!
+
+
+## Your turn 
+
+> You will work in small groups to investigate tree equity in a new state(s) 
+
+-   **Each group will:**   
+  -   Choose a research question(s)    
+  -   Use tidyverse wrangling tools to explore the data     
+  -   Create plot(s) with **ggplot2**     
+
+## Your goals  
+
+-   Clearly state your research question  
+-   Support your question with R code and graphs  
+-   Use the data to identify a trend, pattern, or disparity  
+-   Communicate **WHY** it matters 
+
+## Sample questions
+
+-   How does tree canopy vary across different neighborhoods in *chosen state*?  
+-   Is there a relationship between percent in poverty and tree equity score in *chosen state*? 
+-   How do tree equity trends compare between two or more *chosen states*?  
+-   Are places with lower tree equity also more likely to have higher health disparities in *chosen state*?  
+-   What if you break down / `summarize()` the information by county?
+
+## Getting the data 
+
+**Navigate to https://www.treeequityscore.org/:**
+
+-   in drop down menu, click the "methods and data" tab 
+-   choose the "data download" page
+-   choose the state of interest, and load in the data using the code from the very top of this document (but replace `ca` twice with the two-digit letters for your state)
+
+
+# Independent Practice
+
+## 1. Tree Equity vs. Poverty
+
+> Is there a relationship between poverty (`pctpov`) and tree equity score (`tes`)?
+
+
+```{r}
+#| echo: true
+#| eval: false
+
+ca_tes |>
+  ___(___(x = ___, y = ___)) +
+  ___(color = "green") 
+```
+
+
+
+## 2. Distribution of tree equity scores
+
+> What is the distribution of tree equity scores (`tes`)?
+
+
+```{r}
+#| echo: true
+#| eval: false
+
+___ |>
+  ggplot(aes(___)) +
+  ___(fill = "red")
+```
+
+
+
+## 3. Distribution of tree equity scores
+
+> What is the distribution of tree equity scores (`tes`) created by a boxplot?
+
+
+```{r}
+#| echo: true
+#| eval: false
+
+___ |>
+  ggplot(aes(___)) +
+  ___(fill = "violet")
+```
+
+
+
+## 4. Tree equity vs. linguistic isolation
+
+> Is there a relationship between linguistic isolation(`lingnorm`) and `tes` in an area. 
+
+  - Use ggplot to plot the relationship between `tes` and `lingnorm`
+  - Choose the best plot for the variable types
+  - Create fitting labels for your axes and plot title
+
+
+## 5. Wrangle + plot
+
+Recreate the plot above, but summarize the information **per `county`** before plotting. That is, `Los Angeles County` should now only be represented by one dot. Summarize both `lingnorm` and `tes` using the `mean()` function.
+
+
+## 6. Wrangle + plot + label
+
+Recreate the plot above, but now add labels to the plot to indicate the county of each dot.  Use `geom_label()` or `geom_text()`. Try both! You'll need to use `label = county`...  do you need `aes()`? 
+
+
+
+## 7. Wrangle + plot + label
+
+There is an R package called **ggrepel**.  It includes a geom called `geom_label_repel`. Try it!  (To use a function from a package, you can write: `ggrepel::geom_label_repel()`.)
+
+**Hint:** If R can't find the **ggrepel** package, you may need to type `install.packages("ggrepel")` in the Console down below.
+
+
