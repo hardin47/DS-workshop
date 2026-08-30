@@ -1,0 +1,15 @@
+/* override reveal default width */
+.reveal img {
+  width: auto;
+  max-width: none;
+}
+
+/* grid */
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+.grid2 img {
+  width: 100%; /* fill each cell neatly */
+}
